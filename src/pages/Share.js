@@ -9,12 +9,11 @@ export default function Share() {
     const [isOwner, setIsOwner] = useState(false);
     const [requests, setRequests] = useState([]);
     const [status, setStatus] = useState('');
-    const [requestStatus, setRequestStatus] = useState('none'); // none|pending|approved|rejected
+    const [requestStatus, setRequestStatus] = useState('none');
     const [permissionRequested, setPermissionRequested] = useState(null);
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    // small helpers for avatars and initials
     const getInitials = (email) => {
         if (!email) return '?';
         const parts = String(email).split('@')[0].split(/[._-]/).filter(Boolean);
@@ -52,7 +51,6 @@ export default function Share() {
             setError('');
             return response.data;
         } catch (err) {
-            // ignore failures for now - user might not have requested access
             setRequestStatus('none');
             return null;
         }
@@ -63,7 +61,7 @@ export default function Share() {
         try {
             const response = await API.get('/files');
             const owned = response.data?.owned || [];
-            const found = owned.find(f => String(f._id) === String(id));
+            const found = owned.find((f) => String(f._id) === String(id));
             if (found) {
                 setIsOwner(true);
                 await loadRequests();
@@ -159,7 +157,7 @@ export default function Share() {
                             <div className="empty">No requests</div>
                         ) : (
                             <ul className="request-list">
-                                {requests.map(r => (
+                                {requests.map((r) => (
                                     <li key={r._id} className="request-item">
                                         <div className="request-main">
                                             <div className="request-user">
@@ -207,98 +205,3 @@ export default function Share() {
     );
 }
 
-useEffect(() => {
-    const load = async () => { await checkOwnership(); };
-    load();
-}, [checkOwnership]);
-
-useEffect(() => {
-    const onFocus = async () => { await checkOwnership(); };
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
-}, [checkOwnership]);
-
-return (
-    <div className="share-page">
-        <div className="share-header">
-            <button className="back-btn" onClick={() => navigate(-1)}>← Back</button>
-            <div className="title-area">
-                <h1 className="title">Share / Access</h1>
-                <p className="subtitle">Manage who can view or edit this file</p>
-            </div>
-        </div>
-
-        <div className="share-content">
-            {loading ? (
-                <div className="card">
-                    <div className="card-header">
-                        <h2 className="skeleton w-60">&nbsp;</h2>
-                        <div className="skeleton chip w-20">&nbsp;</div>
-                    </div>
-                    <div className="skeleton-row">
-                        <div className="skeleton avatar" />
-                        <div className="skeleton w-70" />
-                    </div>
-                    <div className="skeleton-row">
-                        <div className="skeleton avatar" />
-                        <div className="skeleton w-50" />
-                    </div>
-                </div>
-            ) : isOwner ? (
-                <section className="card">
-                    <div className="card-header">
-                        <h2>Pending Requests</h2>
-                        <span className="chip">{requests.length} pending</span>
-                    </div>
-
-                    {requests.length === 0 ? (
-                        <div className="empty">No requests</div>
-                    ) : (
-                        <ul className="request-list">
-                            {requests.map(r => (
-                                <li key={r._id} className="request-item">
-                                    <div className="request-main">
-                                        <div className="request-user">
-                                            <div className="avatar" style={{ background: avatarColor(r.requester?.email || String(r._id)) }} aria-hidden>
-                                                <span className="avatar-text">{getInitials(r.requester?.email)}</span>
-                                            </div>
-                                            <div className="request-name">{r.requester?.email || 'unknown'}</div>
-                                        </div>
-                                        <div className="request-meta">Requested: <strong>{r.permissionRequested}</strong></div>
-                                    </div>
-                                    <div className="request-right">
-                                        <div className={`status-badge status-${r.status}`} role="status" aria-live="polite">{r.status}</div>
-                                        {r.status === 'pending' && (
-                                            <div className="actions">
-                                                <button className="btn btn-approve" onClick={() => respond(r._id, 'approve', 'view')}>Approve View</button>
-                                                <button className="btn btn-approve-outline" onClick={() => respond(r._id, 'approve', 'edit')}>Approve Edit</button>
-                                                <button className="btn btn-reject" onClick={() => respond(r._id, 'reject')}>Reject</button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </section>
-            ) : (
-                <section className="card request-access-card">
-                    <h2>Request Access</h2>
-                    <p className="muted">Request permission to view or edit this file. The owner will be notified.</p>
-
-                    <div className="request-actions">
-                        <button className="btn btn-primary" onClick={() => requestAccess('view')} disabled={requestStatus === 'pending' || requestStatus === 'approved'}>Request View</button>
-                        <button className="btn btn-outline" onClick={() => requestAccess('edit')} disabled={requestStatus === 'pending' || requestStatus === 'approved'}>Request Edit</button>
-                    </div>
-
-                    {requestStatus !== 'none' && (
-                        <div className="status-row">Your request status: <strong>{requestStatus}</strong>{permissionRequested ? ` (requested: ${permissionRequested})` : ''}</div>
-                    )}
-
-                    {status && <div className="status-message">{status}</div>}
-                </section>
-            )}
-        </div>
-    </div>
-);
-}

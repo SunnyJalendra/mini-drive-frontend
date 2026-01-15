@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
+    baseURL: process.env.REACT_APP_API_URL || 'https://mini-drive-frontend-eight.vercel.app',
     headers: { 'Content-Type': 'application/json' },
     withCredentials: true
 });
